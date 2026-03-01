@@ -4,3 +4,5 @@ zakat
 web/dist/
 web/node_modules/
 release/
+implementation-plan.md
+requirements.md
