@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { calculateZakat, isLiteMode } from '../api/client';
+import { Link } from 'react-router-dom';
 import type { ZakatResult } from '../types';
 
 const fmt = (v: number) =>
@@ -51,6 +52,24 @@ export default function Dashboard() {
           Refresh
         </button>
       </div>
+
+      {isLiteMode && (
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+          <h2 className="font-semibold text-blue-900 mb-2">Getting Started</h2>
+          <ol className="space-y-2 text-sm text-blue-800">
+            <li><strong>Step 1:</strong> Enter gold and silver prices below (in $/gram)</li>
+            <li><strong>Step 2:</strong> Add your assets:
+              <ul className="ml-6 mt-1 space-y-1">
+                <li>• <Link to="/retirement" className="text-blue-600 hover:underline">Retirement accounts</Link> (401k, IRA, etc.)</li>
+                <li>• <Link to="/investments" className="text-blue-600 hover:underline">Investments</Link> (stocks, crypto, etc.)</li>
+                <li>• <Link to="/savings" className="text-blue-600 hover:underline">Savings</Link> (cash, bank accounts)</li>
+                <li>• <Link to="/jewelry" className="text-blue-600 hover:underline">Jewelry</Link> (gold and silver items)</li>
+              </ul>
+            </li>
+            <li><strong>Step 3:</strong> The dashboard will calculate your Zakat owed automatically</li>
+          </ol>
+        </div>
+      )}
 
       {isLiteMode && (
         <div className="rounded-lg bg-white p-4 shadow flex flex-wrap gap-4 items-center text-sm">
