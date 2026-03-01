@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { calculateZakat } from '../api/client';
+import { calculateZakat, isLiteMode } from '../api/client';
 import type { ZakatResult } from '../types';
 
 const fmt = (v: number) =>
@@ -9,14 +9,27 @@ export default function Dashboard() {
   const [result, setResult] = useState<ZakatResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [metalPrices, setMetalPrices] = useState<{ gold: number; silver: number }>({ gold: 0, silver: 0 });
 
   const load = () => {
     setLoading(true);
     setError('');
+    if (isLiteMode) {
+      const stored = JSON.parse(localStorage.getItem('zakat:prices:metals') || '{"gold":0,"silver":0}');
+      setMetalPrices(stored);
+    }
     calculateZakat()
       .then(setResult)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+  };
+
+  const updateMetalPrice = (metal: 'gold' | 'silver', price: number) => {
+    const updated = { ...metalPrices, [metal]: price };
+    setMetalPrices(updated);
+    localStorage.setItem('zakat:prices:metals', JSON.stringify(updated));
+    // Recalculate
+    calculateZakat().then(setResult).catch((e) => setError(e.message));
   };
 
   useEffect(load, []);
@@ -38,6 +51,24 @@ export default function Dashboard() {
           Refresh
         </button>
       </div>
+
+      {isLiteMode && (
+        <div className="rounded-lg bg-white p-4 shadow flex flex-wrap gap-4 items-center text-sm">
+          <span className="font-medium text-gray-700">Metal Prices (for nisab & jewelry):</span>
+          <label className="flex items-center gap-1">
+            Gold $/g:
+            <input type="number" step="0.01" value={metalPrices.gold || ''}
+              onChange={(e) => updateMetalPrice('gold', +e.target.value)}
+              className="w-24 rounded border border-gray-300 px-2 py-1 text-sm" />
+          </label>
+          <label className="flex items-center gap-1">
+            Silver $/g:
+            <input type="number" step="0.01" value={metalPrices.silver || ''}
+              onChange={(e) => updateMetalPrice('silver', +e.target.value)}
+              className="w-24 rounded border border-gray-300 px-2 py-1 text-sm" />
+          </label>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

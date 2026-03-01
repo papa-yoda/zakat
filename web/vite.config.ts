@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
 import path from 'path'
 
-// Read PORT from the root .env so the dev proxy stays in sync with the backend
 function getRootEnv(): Record<string, string> {
   const envPath = path.resolve(__dirname, '../.env')
   if (!fs.existsSync(envPath)) return {}
@@ -18,14 +17,18 @@ function getRootEnv(): Record<string, string> {
 
 const env = getRootEnv()
 const backendPort = env.PORT ?? '8080'
+const mode = process.env.VITE_MODE ?? 'full'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    'import.meta.env.VITE_MODE': JSON.stringify(mode),
+  },
   server: {
     host: '0.0.0.0',
     allowedHosts: true,
-    proxy: {
+    proxy: mode === 'full' ? {
       '/api': `http://localhost:${backendPort}`
-    }
+    } : undefined
   }
 })

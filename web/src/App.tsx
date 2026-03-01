@@ -6,6 +6,8 @@ import InvestmentsPage from './pages/InvestmentsPage';
 import SavingsPage from './pages/SavingsPage';
 import JewelryPage from './pages/JewelryPage';
 import SettingsPage from './pages/SettingsPage';
+import DataToolbar from './components/DataToolbar';
+import { isLiteMode } from './api/client';
 
 const navItems = [
   { to: '/', label: 'Dashboard' },
@@ -48,7 +50,10 @@ export default function App() {
           }`}
         >
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900">Zakat Calculator</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Zakat Calculator
+              {isLiteMode && <span className="ml-2 text-xs font-normal text-gray-400">lite</span>}
+            </h2>
           </div>
           <nav className="space-y-1 px-3">
             {navItems.map((item) => (
@@ -69,6 +74,7 @@ export default function App() {
               </NavLink>
             ))}
           </nav>
+          <DataToolbar />
         </aside>
 
         {/* Main content */}

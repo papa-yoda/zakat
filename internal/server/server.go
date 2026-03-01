@@ -59,6 +59,11 @@ func New(s store.Store, staticFiles fs.FS) http.Handler {
 
 		// Zakat
 		r.Get("/zakat/calculate", zakatH.Calculate)
+
+		// Data import/export
+		dataH := handler.NewDataHandler(s)
+		r.Get("/export", dataH.Export)
+		r.Post("/import", dataH.Import)
 	})
 
 	// Serve React SPA for all non-API routes

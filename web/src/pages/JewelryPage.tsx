@@ -5,6 +5,7 @@ import {
   updateJewelry,
   deleteJewelry,
   getMetalPrices,
+  isLiteMode,
 } from '../api/client';
 import type { Jewelry, MetalPrices } from '../types';
 import Toggle from '../components/Toggle';
@@ -48,12 +49,17 @@ export default function JewelryPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Jewelry | null>(null);
   const [form, setForm] = useState<FormState>(empty);
+  const [manualMetalPrices, setManualMetalPrices] = useState<{ gold: number; silver: number }>({ gold: 0, silver: 0 });
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const [jewelryData, priceData] = await Promise.all([getJewelry(), getMetalPrices()]);
+      const jewelryData = await getJewelry();
+      const priceData = isLiteMode
+        ? JSON.parse(localStorage.getItem('zakat:prices:metals') || '{"gold":0,"silver":0}')
+        : await getMetalPrices();
+      if (isLiteMode) setManualMetalPrices(priceData);
       setPrices(priceData);
       setItems(
         jewelryData.map((j) => {
@@ -107,6 +113,21 @@ export default function JewelryPage() {
     load();
   };
 
+  const updateMetalPrice = (metal: 'gold' | 'silver', price: number) => {
+    const updated = { ...manualMetalPrices, [metal]: price };
+    setManualMetalPrices(updated);
+    localStorage.setItem('zakat:prices:metals', JSON.stringify(updated));
+    setPrices(updated);
+    // Re-calculate item values
+    setItems(prev => prev.map(j => {
+      const ppg = j.metal_type === 'gold' ? updated.gold : updated.silver;
+      const mw = j.includes_gems && j.gem_weight > 0
+        ? Math.max(0, j.weight_grams - (j.gem_weight_unit === 'carats' ? j.gem_weight * 0.2 : j.gem_weight))
+        : j.weight_grams;
+      return { ...j, current_price_per_gram: ppg, total_value: mw * ppg, metal_weight_grams: mw };
+    }));
+  };
+
   const toggleInclude = async (j: Jewelry) => {
     await updateJewelry(j.id, { ...j, included_in_zakat: !j.included_in_zakat });
     load();
@@ -128,7 +149,22 @@ export default function JewelryPage() {
 
       {error && <div className="text-red-600 text-sm">{error}</div>}
 
-      {prices && (
+      {isLiteMode ? (
+        <div className="flex gap-4 text-sm text-gray-600 items-center">
+          <label>
+            Gold $/g:{' '}
+            <input type="number" step="0.01" value={manualMetalPrices.gold || ''}
+              onChange={(e) => updateMetalPrice('gold', +e.target.value)}
+              className="w-24 rounded border border-gray-300 px-2 py-1 text-sm" />
+          </label>
+          <label>
+            Silver $/g:{' '}
+            <input type="number" step="0.01" value={manualMetalPrices.silver || ''}
+              onChange={(e) => updateMetalPrice('silver', +e.target.value)}
+              className="w-24 rounded border border-gray-300 px-2 py-1 text-sm" />
+          </label>
+        </div>
+      ) : prices && (
         <div className="flex gap-4 text-sm text-gray-600">
           <span>Gold: {fmt(prices.gold)}/g</span>
           <span>Silver: {fmt(prices.silver)}/g</span>

@@ -5,6 +5,7 @@ import {
   updateInvestment,
   deleteInvestment,
   getStockPrice,
+  isLiteMode,
 } from '../api/client';
 import type { Investment } from '../types';
 import Toggle from '../components/Toggle';
@@ -21,15 +22,28 @@ export default function InvestmentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Investment | null>(null);
   const [form, setForm] = useState(empty);
+  const [manualPrices, setManualPrices] = useState<Record<string, number>>({});
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
       const items = await getInvestments();
+      // In lite mode, load stored manual prices
+      const storedPrices: Record<string, number> = isLiteMode
+        ? JSON.parse(localStorage.getItem('zakat:prices:stocks') || '{}')
+        : {};
+      if (isLiteMode) setManualPrices(storedPrices);
       const enriched = await Promise.all(
         items.map(async (inv) => {
           try {
+            if (isLiteMode) {
+              const price = storedPrices[inv.ticker];
+              if (price == null) return { ...inv };
+              const totalValue = inv.shares * price;
+              const daysDiff = (Date.now() - new Date(inv.purchase_date).getTime()) / (1000 * 60 * 60 * 24);
+              return { ...inv, current_price: price, total_value: totalValue, is_long_term: daysDiff > 365 };
+            }
             const { price } = await getStockPrice(inv.ticker);
             const totalValue = inv.shares * price;
             const purchaseDate = new Date(inv.purchase_date);
@@ -77,6 +91,18 @@ export default function InvestmentsPage() {
     if (!confirm('Delete this investment?')) return;
     await deleteInvestment(id);
     load();
+  };
+
+  const updateManualPrice = (ticker: string, price: number) => {
+    const updated = { ...manualPrices, [ticker]: price };
+    setManualPrices(updated);
+    localStorage.setItem('zakat:prices:stocks', JSON.stringify(updated));
+    // Re-enrich investments with new price
+    setInvestments(prev => prev.map(inv => {
+      if (inv.ticker !== ticker) return inv;
+      const totalValue = inv.shares * price;
+      return { ...inv, current_price: price, total_value: totalValue };
+    }));
   };
 
   const toggleInclude = async (inv: Investment) => {
@@ -152,7 +178,18 @@ export default function InvestmentsPage() {
                 <td className="px-6 py-4 text-sm text-right text-gray-900">{inv.shares}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{inv.purchase_date}</td>
                 <td className="px-6 py-4 text-sm text-right text-gray-900">
-                  {inv.current_price != null ? fmt(inv.current_price) : '—'}
+                  {isLiteMode ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={manualPrices[inv.ticker] ?? ''}
+                      onChange={(e) => updateManualPrice(inv.ticker, +e.target.value)}
+                      placeholder="Enter price"
+                      className="w-24 rounded border border-gray-300 px-2 py-1 text-right text-sm"
+                    />
+                  ) : (
+                    inv.current_price != null ? fmt(inv.current_price) : '—'
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-right text-gray-900">
                   {inv.total_value != null ? fmt(inv.total_value) : '—'}
