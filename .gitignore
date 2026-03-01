@@ -1,0 +1,5 @@
+.env
+data/
+zakat
+web/dist/
+web/node_modules/
