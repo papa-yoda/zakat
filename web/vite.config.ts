@@ -20,6 +20,7 @@ const backendPort = env.PORT ?? '8080'
 const mode = process.env.VITE_MODE ?? 'full'
 
 export default defineConfig({
+  base: mode === 'lite' ? '/zakat/' : '/',
   plugins: [react(), tailwindcss()],
   define: {
     'import.meta.env.VITE_MODE': JSON.stringify(mode),
