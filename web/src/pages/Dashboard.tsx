@@ -46,7 +46,9 @@ export default function Dashboard() {
           <p className="mt-1 text-3xl font-bold text-gray-900">{fmt(result.total_zakatable_assets)}</p>
         </div>
         <div className="rounded-lg bg-white p-6 shadow">
-          <p className="text-sm text-gray-500">Nisab Threshold (595g silver)</p>
+          <p className="text-sm text-gray-500">
+            Nisab Threshold ({result.nisab_method === 'gold' ? '85g gold' : '595g silver'})
+          </p>
           <p className="mt-1 text-3xl font-bold text-gray-900">{fmt(result.nisab_value_usd)}</p>
         </div>
         <div className="rounded-lg bg-white p-6 shadow">

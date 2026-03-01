@@ -9,6 +9,7 @@ import (
 )
 
 type ZakatResult struct {
+	NisabMethod          string         `json:"nisab_method"`
 	NisabThreshold       float64        `json:"nisab_threshold"`
 	NisabValueUSD        float64        `json:"nisab_value_usd"`
 	TotalZakatableAssets float64        `json:"total_zakatable_assets"`
@@ -66,10 +67,12 @@ type JewelryItemDetail struct {
 }
 
 const nisabSilverGrams = 595.0
+const nisabGoldGrams = 85.0
 
 func Calculate(s store.Store) (*ZakatResult, error) {
-	result := &ZakatResult{
-		NisabThreshold: nisabSilverGrams,
+	settings, err := s.GetSettings()
+	if err != nil {
+		return nil, err
 	}
 
 	// Get metal prices for nisab and jewelry
@@ -78,7 +81,22 @@ func Calculate(s store.Store) (*ZakatResult, error) {
 		return nil, err
 	}
 
-	result.NisabValueUSD = nisabSilverGrams * metalPrices.SilverPerGram
+	var nisabGrams, nisabValueUSD float64
+	nisabMethod := settings.NisabMethod
+	if nisabMethod == "gold" {
+		nisabGrams = nisabGoldGrams
+		nisabValueUSD = nisabGoldGrams * metalPrices.GoldPerGram
+	} else {
+		nisabMethod = "silver"
+		nisabGrams = nisabSilverGrams
+		nisabValueUSD = nisabSilverGrams * metalPrices.SilverPerGram
+	}
+
+	result := &ZakatResult{
+		NisabMethod:    nisabMethod,
+		NisabThreshold: nisabGrams,
+		NisabValueUSD:  nisabValueUSD,
+	}
 
 	// Calculate retirement
 	retirementAccounts, err := s.GetRetirementAccounts()
@@ -162,9 +180,24 @@ func Calculate(s store.Store) (*ZakatResult, error) {
 		case "silver":
 			pricePerGram = metalPrices.SilverPerGram
 		}
-		totalValue := j.WeightGrams * pricePerGram
+
+		// Deduct gem weight from total weight to get metal-only weight
+		metalWeight := j.WeightGrams
+		if j.IncludesGems && j.GemWeight > 0 {
+			gemGrams := j.GemWeight
+			if j.GemWeightUnit == "carats" {
+				gemGrams = j.GemWeight * 0.2 // 1 carat = 0.2 grams
+			}
+			metalWeight -= gemGrams
+			if metalWeight < 0 {
+				metalWeight = 0
+			}
+		}
+
+		totalValue := metalWeight * pricePerGram
 		j.CurrentPricePerGram = &pricePerGram
 		j.TotalValue = &totalValue
+		j.MetalWeightGrams = &metalWeight
 
 		result.Breakdown.Jewelry.Total += totalValue
 		result.Breakdown.Jewelry.Items = append(result.Breakdown.Jewelry.Items, JewelryItemDetail{

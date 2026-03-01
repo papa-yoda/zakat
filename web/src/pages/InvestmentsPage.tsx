@@ -7,6 +7,7 @@ import {
   getStockPrice,
 } from '../api/client';
 import type { Investment } from '../types';
+import Toggle from '../components/Toggle';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
@@ -79,7 +80,7 @@ export default function InvestmentsPage() {
   };
 
   const toggleInclude = async (inv: Investment) => {
-    await updateInvestment(inv.id, { included_in_zakat: !inv.included_in_zakat });
+    await updateInvestment(inv.id, { ...inv, included_in_zakat: !inv.included_in_zakat });
     load();
   };
 
@@ -164,10 +165,7 @@ export default function InvestmentsPage() {
                   )}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <button onClick={() => toggleInclude(inv)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${inv.included_in_zakat ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                    {inv.included_in_zakat ? 'Yes' : 'No'}
-                  </button>
+                  <Toggle checked={inv.included_in_zakat} onChange={() => toggleInclude(inv)} />
                 </td>
                 <td className="px-6 py-4 text-right space-x-2">
                   <button onClick={() => handleEdit(inv)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>

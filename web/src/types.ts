@@ -37,11 +37,15 @@ export interface Jewelry {
   name: string;
   metal_type: 'gold' | 'silver';
   weight_grams: number;
+  includes_gems: boolean;
+  gem_weight: number;
+  gem_weight_unit: 'grams' | 'carats';
   included_in_zakat: boolean;
   created_at: string;
   updated_at: string;
   current_price_per_gram?: number;
   total_value?: number;
+  metal_weight_grams?: number;
 }
 
 export interface Settings {
@@ -51,6 +55,7 @@ export interface Settings {
 }
 
 export interface ZakatResult {
+  nisab_method: string;
   nisab_threshold: number;
   nisab_value_usd: number;
   total_zakatable_assets: number;

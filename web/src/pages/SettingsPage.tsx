@@ -46,9 +46,26 @@ export default function SettingsPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Nisab Method</label>
-          <input disabled value={settings.nisab_method}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-gray-500" />
-          <p className="mt-1 text-xs text-gray-400">Currently only silver (595g) is supported.</p>
+          <div className="mt-2 flex gap-4">
+            {(['silver', 'gold'] as const).map((method) => (
+              <label key={method} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="nisab_method"
+                  value={method}
+                  checked={settings.nisab_method === method}
+                  onChange={() => setSettings({ ...settings, nisab_method: method })}
+                  className="text-blue-600"
+                />
+                <span className="text-sm text-gray-700 capitalize">
+                  {method} {method === 'silver' ? '(595g)' : '(85g)'}
+                </span>
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-gray-400">
+            Silver (595g) is the more conservative threshold and is the default.
+          </p>
         </div>
 
         <div>

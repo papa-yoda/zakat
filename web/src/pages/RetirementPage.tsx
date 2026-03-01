@@ -6,6 +6,7 @@ import {
   deleteRetirementAccount,
 } from '../api/client';
 import type { RetirementAccount } from '../types';
+import Toggle from '../components/Toggle';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
@@ -60,7 +61,7 @@ export default function RetirementPage() {
   };
 
   const toggleInclude = async (a: RetirementAccount) => {
-    await updateRetirementAccount(a.id, { included_in_zakat: !a.included_in_zakat });
+    await updateRetirementAccount(a.id, { ...a, included_in_zakat: !a.included_in_zakat });
     load();
   };
 
@@ -140,10 +141,7 @@ export default function RetirementPage() {
                   <td className="px-6 py-4 text-sm text-right text-gray-900">{a.tax_rate}%</td>
                   <td className="px-6 py-4 text-sm text-right text-gray-900">{fmt(afterDeductions)}</td>
                   <td className="px-6 py-4 text-center">
-                    <button onClick={() => toggleInclude(a)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${a.included_in_zakat ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                      {a.included_in_zakat ? 'Yes' : 'No'}
-                    </button>
+                    <Toggle checked={a.included_in_zakat} onChange={() => toggleInclude(a)} />
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
                     <button onClick={() => handleEdit(a)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>

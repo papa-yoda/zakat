@@ -1,12 +1,13 @@
 package prices
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 )
+
+// Troy ounce to gram conversion factor
+const troyOzToGrams = 31.1035
 
 type MetalPrices struct {
 	GoldPerGram   float64 `json:"gold_per_gram"`
@@ -46,45 +47,22 @@ func GetMetalPrices() (*MetalPrices, error) {
 	return prices, nil
 }
 
+// fetchMetalPrices uses Yahoo Finance commodity futures tickers:
+//   GC=F — Gold futures (USD per troy oz)
+//   SI=F — Silver futures (USD per troy oz)
 func fetchMetalPrices() (*MetalPrices, error) {
-	prices, err := fetchMetalsDev()
+	goldOz, err := fetchYahooPrice("GC=F")
 	if err != nil {
-		return nil, fmt.Errorf("metals.dev failed: %w", err)
+		return nil, fmt.Errorf("fetch gold price: %w", err)
 	}
-	return prices, nil
-}
 
-func fetchMetalsDev() (*MetalPrices, error) {
-	url := "https://api.metals.dev/v1/latest?api_key=demo&currency=USD&unit=gram"
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(url)
+	silverOz, err := fetchYahooPrice("SI=F")
 	if err != nil {
-		return nil, fmt.Errorf("fetch metals: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("metals.dev returned status %d", resp.StatusCode)
-	}
-
-	var result struct {
-		Metals struct {
-			Gold   float64 `json:"gold"`
-			Silver float64 `json:"silver"`
-		} `json:"metals"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decode metals response: %w", err)
-	}
-
-	if result.Metals.Gold == 0 && result.Metals.Silver == 0 {
-		return nil, fmt.Errorf("metals.dev returned zero prices")
+		return nil, fmt.Errorf("fetch silver price: %w", err)
 	}
 
 	return &MetalPrices{
-		GoldPerGram:   result.Metals.Gold,
-		SilverPerGram: result.Metals.Silver,
+		GoldPerGram:   goldOz / troyOzToGrams,
+		SilverPerGram: silverOz / troyOzToGrams,
 	}, nil
 }

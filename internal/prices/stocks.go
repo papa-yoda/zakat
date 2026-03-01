@@ -51,7 +51,12 @@ func fetchYahooPrice(ticker string) (float64, error) {
 	url := fmt.Sprintf("https://query1.finance.yahoo.com/v8/finance/chart/%s?range=1d&interval=1d", ticker)
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0, fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ZakatCalculator/1.0)")
+	resp, err := client.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("fetch stock price: %w", err)
 	}

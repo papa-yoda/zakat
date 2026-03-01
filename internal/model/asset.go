@@ -40,10 +40,14 @@ type Jewelry struct {
 	Name            string  `json:"name"`
 	MetalType       string  `json:"metal_type"`
 	WeightGrams     float64 `json:"weight_grams"`
+	IncludesGems    bool    `json:"includes_gems"`
+	GemWeight       float64 `json:"gem_weight"`
+	GemWeightUnit   string  `json:"gem_weight_unit"` // "grams" or "carats"
 	IncludedInZakat bool    `json:"included_in_zakat"`
 	CreatedAt       string  `json:"created_at"`
 	UpdatedAt       string  `json:"updated_at"`
 	// Computed
 	CurrentPricePerGram *float64 `json:"current_price_per_gram,omitempty"`
 	TotalValue          *float64 `json:"total_value,omitempty"`
+	MetalWeightGrams    *float64 `json:"metal_weight_grams,omitempty"`
 }
