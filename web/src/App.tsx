@@ -22,7 +22,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <div className="flex min-h-screen bg-gray-50">
         {/* Mobile hamburger */}
         <button
